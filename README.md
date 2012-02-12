@@ -3,7 +3,7 @@ A reasonably simple IRC bot that is intended to keep an IRC channel topic update
 
 ##Features##
 
- - Reads a JSON document from a URL and expects to parse a Hackerpace Status API document. (https://hackerspaces.nl/spaceapi/)
+ - Reads a JSON document from a URL and expects to parse a Hackerspace Status API document. (https://hackerspaces.nl/spaceapi/)
  - Maintains custom open/closed text at the beginning of the topic
  - Handles NickServ authentication on connect
  - Handles disconnection/reconnection and reauthentication
