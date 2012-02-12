@@ -14,11 +14,60 @@ A reasonably simple IRC bot that is intended to keep an IRC channel topic update
   - Signal handling
   - Simple config file
   - pidfile
+ - Debian/Ubuntu package
+
+##Usage##
+
+###From source###
+
+To run the bot from source for evaluating it or debugging it, do this:
+
+$ python src/sesamebot.py -c conf/sesamebot.conf
+
+###From deb package###
+
+\# /etc/init.d/sesamebot (start|stop|status)
+
+##Configuration##
+
+Example configuration:
+
+    [main]
+    drop_privs =   true
+    user =         nobody
+    group =        nogroup
+    
+    [irc]
+    server =             irc.freenode.net
+    port =               6667
+    nickname =           yourbot
+    name =               A bot for telling you when a hackerspace opens/closes.
+    nickserv_password =  yourpassword
+    channel =            #yourchannel
+    join_channel =       false
+    reconnect_interval = 60
+    
+    [status]
+    url =             http://hackerspace.example.com/statusdocument.json
+    timeout =         5
+    check_interval =  60
+    
+    [statustext]
+    # This controls the text that is inserted at the start of the topic.
+    true  = "hackerspace is OPEN | "
+    false = "hackerspace is CLOSED | "
+    error = "hackerspace is (error, check sesamebot syslog) | "
+    
+    [ircnetwork]
+    # Values correct for Freenode as of February 2012.
+    chanserv_nick =      ChanServ
+    nickserv_nick =      NickServ
+    nickserv_addr =      NickServ!NickServ@services.
+    nickserv_challenge = This nickname is registered.
+    nickserv_success   = You are now identified for
 
 ##TODO##
 
- - Debian/Ubuntu package
-  - Init script
  - Cleaning up topic before shutting down
  - Putting open/closed time in the topic
 
