@@ -1,0 +1,2 @@
+conf/sesamebot.conf /etc/
+src/sesamebot /usr/bin/

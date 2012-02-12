@@ -1,0 +1,23 @@
+#!/usr/bin/make -f
+# -*- makefile -*-
+
+# Uncomment this to turn on verbose mode.
+#export DH_VERBOSE=1
+#export DH_OPTIONS=-v
+
+build:
+	debian/checkversions.sh
+	cp src/sesamebot.py src/sesamebot
+	dh build
+
+clean:
+	dh_testdir
+	dh_auto_clean
+	rm -f src/sesamebot
+	dh_clean
+
+%:
+	echo "target" $@
+	dh $@
+
+

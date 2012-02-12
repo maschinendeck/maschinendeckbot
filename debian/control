@@ -1,0 +1,21 @@
+Source: sesamebot
+Section: python
+Priority: optional
+Maintainer: derpston <derpston@sleepygeek.org>
+Build-Depends:
+    debhelper (>= 6.0.0),
+    python-support (>= 0.90)
+Standards-Version: 3.9.1
+
+Package: sesamebot
+Architecture: all
+Depends:
+    ${python:Depends},
+    ${misc:Depends},
+    python,
+    python-irclib
+Description: IRC bot for communicating hackerspace open/closed state
+ Periodically checks a Hackerspace Status API JSON document to see if
+ the hackerspace is open or closed and maintains custom open/closed
+ strings in a channel topic.
+ See https://github.com/derpston/sesamebot for details.
