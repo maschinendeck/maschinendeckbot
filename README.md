@@ -33,7 +33,8 @@ $ python src/sesamebot.py -c conf/sesamebot.conf
  - Register a nick for the bot to use
  - Edit the default configuration, reproduced below
  - Give the bot nick permission to change the topic (+t) for your channel
-    /msg chanserv flags #yourchannel yourbot +t
+
+        /msg chanserv flags #yourchannel yourbot +t
 
 ##Configuration##
 
