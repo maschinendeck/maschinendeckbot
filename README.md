@@ -28,6 +28,13 @@ $ python src/sesamebot.py -c conf/sesamebot.conf
 
 \# /etc/init.d/sesamebot (start|stop|status)
 
+##Configuration for Freenode##
+
+ - Register a nick for the bot to use
+ - Edit the default configuration, reproduced below
+ - Give the bot nick permission to change the topic (+t) for your channel
+    /msg chanserv flags #yourchannel yourbot +t
+
 ##Configuration##
 
 Example configuration:
