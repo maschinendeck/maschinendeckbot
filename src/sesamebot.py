@@ -1,7 +1,12 @@
-# 
+#!/usr/bin/env python
+
 # IRC bot for keeping the topic of a channel updated with the open/closed
 # state of a hackerspace.
-# 
+#
+
+# If you're making a new release, make sure you keep this version in sync
+# with debian/changelog or the package build will fail and call you names.
+__version__ = "0.1.0"
 
 import ConfigParser
 import argparse
@@ -11,6 +16,7 @@ import urllib2
 import signal
 import ircbot
 import irclib
+import socket
 import json
 import sys
 import grp
@@ -189,7 +195,6 @@ if __name__ == '__main__':
          os.setuid(pwd.getpwnam(config.get('main', 'user')).pw_uid)
       except OSError, ex:
          logging.error("Could not drop privs to %s.%s: %s" % (config.get('main', 'user'), config.get('main', 'group'), ex))
-   logging.error("starting bot")
 
    # Double fork to detach from controlling terminal and ensure we can't ever reclaim one.
    if args.daemonise:
