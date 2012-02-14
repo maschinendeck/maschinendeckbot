@@ -6,7 +6,8 @@
 
 # If you're making a new release, make sure you keep this version in sync
 # with debian/changelog or the package build will fail and call you names.
-__version__ = "0.1.0"
+# Just kidding, it's very polite.
+__version__ = "0.1.1"
 
 import ConfigParser
 import argparse
@@ -64,7 +65,7 @@ class Bot(ircbot.SingleServerIRCBot):
 
    def check_state_periodic(self):
       # Schedule another call to checking the state later.
-      self.connection.execute_delayed(self.config.getint('status', 'check_interval'), Bot.check_state, (self,))
+      self.connection.execute_delayed(self.config.getint('status', 'check_interval'), Bot.check_state_periodic, (self,))
 
       # Check the open/closed state now.
       self.check_state()
