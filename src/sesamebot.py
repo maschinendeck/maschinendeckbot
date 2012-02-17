@@ -7,7 +7,7 @@
 # If you're making a new release, make sure you keep this version in sync
 # with debian/changelog or the package build will fail and call you names.
 # Just kidding, it's very polite.
-__version__ = "0.1.1"
+__version__ = "0.1.2"
 
 import ConfigParser
 import argparse
@@ -18,6 +18,7 @@ import signal
 import ircbot
 import irclib
 import socket
+import time
 import json
 import sys
 import grp
@@ -27,6 +28,9 @@ import os
 class Bot(ircbot.SingleServerIRCBot):
    # The last open/closed/etc state we knew.
    state = None
+
+   # Timestamp for the last successful check.
+   last_successful_check = None
 
    def __init__(self, args, config):
       ircbot.SingleServerIRCBot.__init__(self, [(config.get('irc', 'server'), config.getint('irc', 'port'))], config.get('irc', 'nickname'), config.get('irc', 'name'))
@@ -79,8 +83,14 @@ class Bot(ircbot.SingleServerIRCBot):
          state_json = urllib2.urlopen(self.config.get('status', 'url'), timeout = self.config.getint('status', 'timeout')).read()
          self.state = json.loads(state_json)['open']
       except:
-         self.state = "error"
+         self.state = None
          logging.exception("Unable to read open/closed state from %s:" % self.config.get('status', 'url'))
+     
+      if self.state in [True, False]:
+         self.last_successful_check = time.time()
+      elif self.last_successful_check is not None and (time.time() - self.last_successful_check) < self.config.getint('status', 'error_grace_period'):
+         logging.info("Couldn't check state, but within error_grace_period time so ignoring this status for now.")
+         return
 
       # The channel topic might need updating. Retrieve the current topic
       # with a LIST command.
@@ -103,8 +113,9 @@ class Bot(ircbot.SingleServerIRCBot):
       # Load the texts from the config and strip double quote characters from the ends.
       texts = dict(map(lambda (k, v): (k, v.strip('"')), self.config.items('statustext')))
 
-      # Hardcode an error state for when one doesn't exist in the config.
-      texts[None] = "(sesamebot broken, check syslog) | "
+      texts[True] = self.config.get('statustext', 'open').strip('"')
+      texts[False] = self.config.get('statustext', 'closed').strip('"')
+      texts[None] = self.config.get('statustext', 'error').strip('"')
 
       # Allow the caller to specify the text that should be in the topic.
       if force_text is not None:

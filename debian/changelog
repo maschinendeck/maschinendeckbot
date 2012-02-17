@@ -1,3 +1,9 @@
+sesamebot (0.1.2) unstable; urgency=low
+
+  * Fixing improper handling of boolean 'open' state, now that tog.ie
+    have fixed it on their side.
+
+ -- derpston <derpston@sleepygeek.org>  Fri, 17 Feb 2012 15:00:00 +0000
 sesamebot (0.1.1) unstable; urgency=low
 
   * Fixing a bug where the bot didn't do the one thing it was designed
