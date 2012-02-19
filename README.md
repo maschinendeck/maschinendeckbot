@@ -59,12 +59,13 @@ Example configuration:
     url =             http://hackerspace.example.com/statusdocument.json
     timeout =         5
     check_interval =  60
+    error_grace_period = 120
     
     [statustext]
     # This controls the text that is inserted at the start of the topic.
-    true  = "hackerspace is OPEN | "
-    false = "hackerspace is CLOSED | "
-    error = "hackerspace is (error, check sesamebot syslog) | "
+    open   = "hackerspace is OPEN | "
+    closed = "hackerspace is CLOSED | "
+    error  = "hackerspace is (error, check sesamebot syslog) | "
     
     [ircnetwork]
     # Values correct for Freenode as of February 2012.
