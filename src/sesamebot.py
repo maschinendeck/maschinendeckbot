@@ -95,7 +95,11 @@ class Bot(ircbot.SingleServerIRCBot):
       # The channel topic might need updating. Retrieve the current topic
       # with a LIST command.
       logging.debug("Listing channels to get the topic of %s" % self.config.get('irc', 'channel'))
-      self.connection.list([self.config.get('irc', 'channel')])
+      try:
+         self.connection.list([self.config.get('irc', 'channel')])
+      except Exception, ex:
+         logging.warning("Unable to list channels to get current topic, state check failed. (%s)" % ex)
+         self.disconnect()
 
    def on_list(self, connection, event):
       """Receives each result from a LIST command."""
