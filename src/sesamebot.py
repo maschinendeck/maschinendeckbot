@@ -81,7 +81,7 @@ class Bot(ircbot.SingleServerIRCBot):
       # Try to fetch the JSON document specifying whether the hackerspace is open.
       try:
          state_json = urllib2.urlopen(self.config.get('status', 'url'), timeout = self.config.getint('status', 'timeout')).read()
-         self.state = json.loads(state_json)['open']
+         self.state = json.loads(state_json)['state']['open']
       except:
          self.state = None
          logging.exception("Unable to read open/closed state from %s:" % self.config.get('status', 'url'))
