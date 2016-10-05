@@ -24,6 +24,8 @@ import sys
 import grp
 import pwd
 import os
+import paho.mqtt.client as mqtt
+import random
 
 class Bot(ircbot.SingleServerIRCBot):
    # The last open/closed/etc state we knew.
@@ -32,13 +34,16 @@ class Bot(ircbot.SingleServerIRCBot):
    # Timestamp for the last successful check.
    last_successful_check = None
 
+   clients_total = -1
+   clients_wifi = -1
+
    def __init__(self, args, config):
       ircbot.SingleServerIRCBot.__init__(self, [(config.get('irc', 'server'), config.getint('irc', 'port'))], config.get('irc', 'nickname'), config.get('irc', 'name'))
 
       self.config = config
 
    def on_nicknameinuse(self, connection, event):
-      logging.error("Nick %s in use, retrying in %ds" % (connection.get_nickname(), self.config.get('irc', 'reconnect_interval')))
+      logging.error("Nick %s in use, retrying in %s" % (connection.get_nickname(), self.config.get('irc', 'reconnect_interval')))
       self.disconnect()
 
    def on_welcome(self, connection, event):
@@ -65,26 +70,110 @@ class Bot(ircbot.SingleServerIRCBot):
                connection.join(self.config.get('irc', 'channel'))
 
             # Start periodically checking the open/closed state.
-            self.check_state_periodic()
+            self.check_state_init()
 
-   def check_state_periodic(self):
-      # Schedule another call to checking the state later.
-      self.connection.execute_delayed(self.config.getint('status', 'check_interval'), Bot.check_state_periodic, (self,))
+   def on_pubmsg(self, connection, event):
+      message = event.arguments()[0].strip()
+      logging.debug("got message %s"%(message))
+      parts = message.split(" ")
+      if "!raum" in parts:
+         state = "(that should never happen)"
+         if self.state == True:
+            state = "offen"
+         elif self.state == False:
+            state = "geschlossen"
+         elif self.state == None:
+            state = "habe seit botstart keinen MQTT-Raumstatus erhalten"
 
-      # Check the open/closed state now.
-      self.check_state()
+         if random.randrange(1,100) > 95:
+            state = "%s und sauber" % state
+
+         self.connection.privmsg(self.config.get('irc', 'channel'), "raumstatus: %s"%state)
+
+      if "!clients" in parts:
+         if self.clients_total == -1 and self.clients_wifi == -1:
+             self.connection.privmsg(self.config.get('irc', 'channel'), "clientzahl ist aktuell nicht verfuegbar")
+         elif self.clients_total == -1:
+             self.connection.privmsg(self.config.get('irc', 'channel'), "aktuell sind %s wlan-clients verbunden"%self.clients_wifi)
+         elif self.clients_wifi == -1:
+             self.connection.privmsg(self.config.get('irc', 'channel'), "aktuell sind %s clients verbunden"%self.clients_total)
+         else:
+             self.connection.privmsg(self.config.get('irc', 'channel'), "aktuell sind %s wlan-clients und %s lan-clients verbunden"%(self.clients_wifi, self.clients_total - self.clients_wifi))
+
+      if "!help" in parts:
+         self.connection.privmsg(self.config.get('irc', 'channel'), "kommandos: !help, !clients, !raum")
+
+
+   def on_message(self, client, userdata, msg):
+      logging.debug("got on topic %s message %s" % (msg.topic, msg.payload));
+      if msg.topic == "/maschinendeck/raum/status":
+         if msg.payload == "open":
+            self.state = True
+         elif msg.payload == "closed":
+            self.state = False
+         else:
+            logging.info("invalid message received. setting state to None")
+            self.state = None
+         self.check_state()
+
+      elif msg.topic == "/maschinendeck/wiki/edit":
+          logging.info("got edit on wiki")
+          try:
+             editInfo = json.loads(msg.payload)
+          except ValueError:
+             logging.error("error decoding /maschinendeck/wiki/edit-JSON")
+             return
+
+          if editInfo["isMinor"]:
+             logging.info("ignore minor edit")
+          else:
+             self.connection.privmsg(self.config.get('irc', 'channel'), (u"wiki: '%s' on https://wiki.maschinendeck.org/wiki/%s by %s (diff https://wiki.maschinendeck.org/w/index.php?diff=%s )" % (
+                editInfo["summary"],
+                editInfo["article"]["mTitle"]["mUrlform"],
+                editInfo["user"]["mName"],
+		editInfo["article"]["mLatest"]
+             )).encode(encoding='utf8'))
+
+      elif msg.topic == "/maschinendeck/raum/clients":
+         logging.debug("got clientcount")
+         try:
+            clientCount = json.loads(msg.payload)
+         except ValueError:
+            logging.error("error decoding /maschinendeck/raum/clients-JSON")
+            self.clients_total = -1
+            self.clients_wifi = -1
+            return
+
+         if "total" in clientCount:
+            self.clients_total = clientCount['total']
+         else:
+            self.clients_total = -1
+
+         if "wireless" in clientCount:
+            self.clients_wifi = clientCount['wireless']
+         else:
+            self.clients_wifi = -1
+        
+ 
+
+   def check_state_init(self):
+      logging.info("Connecting to MQTT")
+      client = mqtt.Client()
+      client.on_connect = self.on_connect
+      client.on_message = self.on_message
+      client.connect_async("mqtt.starletp9.de", 1883, 600)
+      client.loop_start()
+    
+   def on_connect(self, client, userdata, flags, rc):
+      logging.info("Connected with result code " + str(rc))
+
+      client.subscribe("/maschinendeck/raum/status")
+      client.subscribe("/maschinendeck/wiki/edit")
+      client.subscribe("/maschinendeck/raum/clients")
 
    def check_state(self):
       """Request the current open/closed state from the status URL in the config."""
       logging.debug("Checking open/closed state...")
-
-      # Try to fetch the JSON document specifying whether the hackerspace is open.
-      try:
-         state_json = urllib2.urlopen(self.config.get('status', 'url'), timeout = self.config.getint('status', 'timeout')).read()
-         self.state = json.loads(state_json)['state']['open']
-      except:
-         self.state = None
-         logging.exception("Unable to read open/closed state from %s:" % self.config.get('status', 'url'))
      
       if self.state in [True, False]:
          self.last_successful_check = time.time()
