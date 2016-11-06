@@ -26,16 +26,21 @@ import pwd
 import os
 import paho.mqtt.client as mqtt
 import random
+import time
 
 class Bot(ircbot.SingleServerIRCBot):
    # The last open/closed/etc state we knew.
    state = None
+   receivedStates = 0
 
    # Timestamp for the last successful check.
    last_successful_check = None
 
    clients_total = -1
    clients_wifi = -1
+
+   cooldown_timestamp = 0
+   cooldown_count = 0
 
    def __init__(self, args, config):
       ircbot.SingleServerIRCBot.__init__(self, [(config.get('irc', 'server'), config.getint('irc', 'port'))], config.get('irc', 'nickname'), config.get('irc', 'name'))
@@ -76,32 +81,46 @@ class Bot(ircbot.SingleServerIRCBot):
       message = event.arguments()[0].strip()
       logging.debug("got message %s"%(message))
       parts = message.split(" ")
-      if "!raum" in parts:
-         state = "(that should never happen)"
-         if self.state == True:
-            state = "offen"
-         elif self.state == False:
-            state = "geschlossen"
-         elif self.state == None:
-            state = "habe seit botstart keinen MQTT-Raumstatus erhalten"
+      if "!raum" in parts or "!clients" in parts or "!help" in parts:
+         now = time.time()
+         self.cooldown_count -= 1
+         if now > self.cooldown_timestamp + 60*5:
+            self.cooldown_timestamp = now
+            self.cooldown_count = 5
 
-         if random.randrange(1,100) > 95:
-            state = "%s und sauber" % state
+         if self.cooldown_count == 0:
+            self.connection.privmsg(self.config.get('irc', 'channel'), "zu viel Spam hier, ich bin mal fuer 5 Minuten ruhig.")
+            logging.debug("engaging cooldown")
+         
+         if self.cooldown_count < 1:
+            return
 
-         self.connection.privmsg(self.config.get('irc', 'channel'), "raumstatus: %s"%state)
-
-      if "!clients" in parts:
-         if self.clients_total == -1 and self.clients_wifi == -1:
-             self.connection.privmsg(self.config.get('irc', 'channel'), "clientzahl ist aktuell nicht verfuegbar")
-         elif self.clients_total == -1:
-             self.connection.privmsg(self.config.get('irc', 'channel'), "aktuell sind %s wlan-clients verbunden"%self.clients_wifi)
-         elif self.clients_wifi == -1:
-             self.connection.privmsg(self.config.get('irc', 'channel'), "aktuell sind %s clients verbunden"%self.clients_total)
-         else:
-             self.connection.privmsg(self.config.get('irc', 'channel'), "aktuell sind %s wlan-clients und %s lan-clients verbunden"%(self.clients_wifi, self.clients_total - self.clients_wifi))
-
-      if "!help" in parts:
-         self.connection.privmsg(self.config.get('irc', 'channel'), "kommandos: !help, !clients, !raum")
+         if "!raum" in parts:
+            state = "(that should never happen)"
+            if self.state == True:
+               state = "offen"
+            elif self.state == False:
+               state = "geschlossen"
+            elif self.state == None:
+               state = "habe seit botstart keinen MQTT-Raumstatus erhalten"
+   
+            if random.randrange(1,100) > 95:
+               state = "%s und sauber" % state
+   
+            self.connection.privmsg(self.config.get('irc', 'channel'), "raumstatus: %s"%state)
+   
+         elif "!clients" in parts:
+            if self.clients_total == -1 and self.clients_wifi == -1:
+                self.connection.privmsg(self.config.get('irc', 'channel'), "clientzahl ist aktuell nicht verfuegbar")
+            elif self.clients_total == -1:
+                self.connection.privmsg(self.config.get('irc', 'channel'), "aktuell sind %s wlan-clients verbunden"%self.clients_wifi)
+            elif self.clients_wifi == -1:
+                self.connection.privmsg(self.config.get('irc', 'channel'), "aktuell sind %s clients verbunden"%self.clients_total)
+            else:
+                self.connection.privmsg(self.config.get('irc', 'channel'), "aktuell sind %s wlan-clients und %s lan-clients verbunden"%(self.clients_wifi, self.clients_total - self.clients_wifi))
+   
+         elif "!help" in parts:
+            self.connection.privmsg(self.config.get('irc', 'channel'), "kommandos: !help, !clients, !raum")
 
 
    def on_message(self, client, userdata, msg):
@@ -109,11 +128,23 @@ class Bot(ircbot.SingleServerIRCBot):
       if msg.topic == "/maschinendeck/raum/status":
          if msg.payload == "open":
             self.state = True
+            if self.receivedStates > 0:
+              if random.randrange(1,100) > 95:
+                self.connection.privmsg(self.config.get('irc', 'channel'), "Der Raum ist jetzt offen und dreckig.")
+              else:
+                self.connection.privmsg(self.config.get('irc', 'channel'), "Der Raum ist jetzt offen.")
          elif msg.payload == "closed":
             self.state = False
+            if self.receivedStates > 0:
+              if random.randrange(1,100) > 95:
+                self.connection.privmsg(self.config.get('irc', 'channel'), "Der Raum ist jetzt geschlossen und dreckig.")
+              else:
+                self.connection.privmsg(self.config.get('irc', 'channel'), "Der Raum ist jetzt geschlossen.")
          else:
+            self.connection.privmsg(self.config.get('irc', 'channel'), "Der Raum ist gerade verschwunden.")
             logging.info("invalid message received. setting state to None")
             self.state = None
+         self.receivedStates += 1
          self.check_state()
 
       elif msg.topic == "/maschinendeck/wiki/edit":
