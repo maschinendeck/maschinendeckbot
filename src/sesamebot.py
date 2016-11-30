@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 
 # IRC bot for keeping the topic of a channel updated with the open/closed
 # state of a hackerspace.
@@ -31,7 +32,6 @@ import time
 class Bot(ircbot.SingleServerIRCBot):
    # The last open/closed/etc state we knew.
    state = None
-   receivedStates = 0
 
    # Timestamp for the last successful check.
    last_successful_check = None
@@ -81,7 +81,7 @@ class Bot(ircbot.SingleServerIRCBot):
       message = event.arguments()[0].strip()
       logging.debug("got message %s"%(message))
       parts = message.split(" ")
-      if "!raum" in parts or "!clients" in parts or "!help" in parts:
+      if "!raum" in parts or "!clients" in parts or "!help" in parts or "!ofen" in parts or "!raumstatus" in parts:
          now = time.time()
          self.cooldown_count -= 1
          if now > self.cooldown_timestamp + 60*5:
@@ -95,7 +95,7 @@ class Bot(ircbot.SingleServerIRCBot):
          if self.cooldown_count < 1:
             return
 
-         if "!raum" in parts:
+         if "!raum" in parts or "!raumstatus" in parts:
             state = "(that should never happen)"
             if self.state == True:
                state = "offen"
@@ -118,9 +118,12 @@ class Bot(ircbot.SingleServerIRCBot):
                 self.connection.privmsg(self.config.get('irc', 'channel'), "aktuell sind %s clients verbunden"%self.clients_total)
             else:
                 self.connection.privmsg(self.config.get('irc', 'channel'), "aktuell sind %s wlan-clients und %s lan-clients verbunden"%(self.clients_wifi, self.clients_total - self.clients_wifi))
+
+         elif "!ofen" in parts:
+	    self.connection.privmsg(self.config.get('irc', 'channel'), "Weiß ich nicht. Löte mir bitte etwas Sensorik, die das erfasst")
    
          elif "!help" in parts:
-            self.connection.privmsg(self.config.get('irc', 'channel'), "kommandos: !help, !clients, !raum")
+            self.connection.privmsg(self.config.get('irc', 'channel'), "Kommandos: !help, !clients, !raum und sobald jemand das gebaut hat !ofen")
 
 
    def on_message(self, client, userdata, msg):
@@ -128,23 +131,23 @@ class Bot(ircbot.SingleServerIRCBot):
       if msg.topic == "/maschinendeck/raum/status":
          if msg.payload == "open":
             self.state = True
-            if self.receivedStates > 0:
+            if not msg.retain:
               if random.randrange(1,100) > 95:
                 self.connection.privmsg(self.config.get('irc', 'channel'), "Der Raum ist jetzt offen und dreckig.")
               else:
                 self.connection.privmsg(self.config.get('irc', 'channel'), "Der Raum ist jetzt offen.")
          elif msg.payload == "closed":
             self.state = False
-            if self.receivedStates > 0:
-              if random.randrange(1,100) > 95:
+            if not msg.retain:
+              if not msg.retain:
                 self.connection.privmsg(self.config.get('irc', 'channel'), "Der Raum ist jetzt geschlossen und dreckig.")
               else:
                 self.connection.privmsg(self.config.get('irc', 'channel'), "Der Raum ist jetzt geschlossen.")
          else:
-            self.connection.privmsg(self.config.get('irc', 'channel'), "Der Raum ist gerade verschwunden.")
+            if not msg.retain:
+              self.connection.privmsg(self.config.get('irc', 'channel'), "Der Raum ist gerade verschwunden.")
             logging.info("invalid message received. setting state to None")
             self.state = None
-         self.receivedStates += 1
          self.check_state()
 
       elif msg.topic == "/maschinendeck/wiki/edit":
