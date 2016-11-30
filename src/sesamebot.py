@@ -195,7 +195,7 @@ class Bot(ircbot.SingleServerIRCBot):
       client = mqtt.Client()
       client.on_connect = self.on_connect
       client.on_message = self.on_message
-      client.connect_async("mqtt.starletp9.de", 1883, 600)
+      client.connect_async(config.get('mqtt', 'host'), config.getint('mqtt', 'port'), config.getint('mqtt', 'keepalive'))
       client.loop_start()
     
    def on_connect(self, client, userdata, flags, rc):
