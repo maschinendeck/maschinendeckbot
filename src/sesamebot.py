@@ -139,7 +139,7 @@ class Bot(ircbot.SingleServerIRCBot):
          elif msg.payload == "closed":
             self.state = False
             if not msg.retain:
-              if not msg.retain:
+              if random.randrange(1,100) > 95:
                 self.connection.privmsg(self.config.get('irc', 'channel'), "Der Raum ist jetzt geschlossen und dreckig.")
               else:
                 self.connection.privmsg(self.config.get('irc', 'channel'), "Der Raum ist jetzt geschlossen.")
