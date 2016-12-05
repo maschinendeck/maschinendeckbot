@@ -81,7 +81,7 @@ class Bot(ircbot.SingleServerIRCBot):
       message = event.arguments()[0].strip()
       logging.debug("got message %s"%(message))
       parts = message.split(" ")
-      if "!raum" in parts or "!clients" in parts or "!help" in parts or "!ofen" in parts or "!raumstatus" in parts:
+      if "!raum" in parts or "!clients" in parts or "!help" in parts or "!ofen" in parts or "!raumstatus" in parts or "!room" in parts:
          now = time.time()
          self.cooldown_count -= 1
          if now > self.cooldown_timestamp + 60*5:
@@ -95,7 +95,7 @@ class Bot(ircbot.SingleServerIRCBot):
          if self.cooldown_count < 1:
             return
 
-         if "!raum" in parts or "!raumstatus" in parts:
+         if "!raum" in parts or "!raumstatus" in parts or "!room" in parts:
             state = "(that should never happen)"
             if self.state == True:
                state = "offen"
