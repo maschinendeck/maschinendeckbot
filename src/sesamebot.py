@@ -147,6 +147,7 @@ class Bot(ircbot.SingleServerIRCBot):
             if not msg.retain:
               self.connection.privmsg(self.config.get('irc', 'channel'), "Der Raum ist gerade verschwunden.")
             logging.info("invalid message received. setting state to None")
+            logging.info("message: %s"%msg.payload)
             self.state = None
          self.check_state()
 
