@@ -81,7 +81,7 @@ class Bot(ircbot.SingleServerIRCBot):
       message = event.arguments()[0].strip()
       logging.debug("got message %s"%(message))
       parts = message.split(" ")
-      if "!raum" in parts or "!clients" in parts or "!help" in parts or "!ofen" in parts or "!raumstatus" in parts or "!room" in parts:
+      if "!raum" in parts or "!clients" in parts or "!help" in parts or "!ofen" in parts or "!raumstatus" in parts or "!room" in parts or "!pizza" in parts or "!pizzaofen" in parts or "!lasagne" in parts:
          now = time.time()
          self.cooldown_count -= 1
          if now > self.cooldown_timestamp + 60*5:
@@ -119,11 +119,11 @@ class Bot(ircbot.SingleServerIRCBot):
             else:
                 self.connection.privmsg(self.config.get('irc', 'channel'), "aktuell sind %s wlan-clients und %s lan-clients verbunden"%(self.clients_wifi, self.clients_total - self.clients_wifi))
 
-         elif "!ofen" in parts:
-	    self.connection.privmsg(self.config.get('irc', 'channel'), "Weiß ich nicht. Löte mir bitte etwas Sensorik, die das erfasst")
+         elif "!ofen" in parts or "!pizza" in parts or "!pizzaofen" in parts or "!lasagne" in parts:
+	    self.connection.privmsg(self.config.get('irc', 'channel'), "Weiß ich nicht. Bitte schreibe mir eine Bilderkennung, die http://pizzastatus.rageofzen.com/ passend auswertet.")
    
          elif "!help" in parts:
-            self.connection.privmsg(self.config.get('irc', 'channel'), "Kommandos: !help, !clients, !raum und sobald jemand das gebaut hat !ofen")
+            self.connection.privmsg(self.config.get('irc', 'channel'), "Kommandos: !help, !clients, !raum und semifunktional !ofen")
 
 
    def on_message(self, client, userdata, msg):
