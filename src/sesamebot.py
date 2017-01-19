@@ -137,19 +137,19 @@ class Bot(ircbot.SingleServerIRCBot):
             self.state = True
             if not msg.retain:
               if random.randrange(1,100) > 95:
-                self.connection.privmsg(self.config.get('irc', 'channel'), "Der Raum ist jetzt offen und dreckig.")
+                self.ratelimitedSend(self.config.get('irc', 'channel'), "Der Raum ist jetzt offen und dreckig.")
               else:
-                self.connection.privmsg(self.config.get('irc', 'channel'), "Der Raum ist jetzt offen.")
+                self.ratelimitedSend(self.config.get('irc', 'channel'), "Der Raum ist jetzt offen.")
          elif msg.payload == "closed":
             self.state = False
             if not msg.retain:
               if random.randrange(1,100) > 95:
-                self.connection.privmsg(self.config.get('irc', 'channel'), "Der Raum ist jetzt geschlossen und dreckig.")
+                self.ratelimitedSend(self.config.get('irc', 'channel'), "Der Raum ist jetzt geschlossen und dreckig.")
               else:
-                self.connection.privmsg(self.config.get('irc', 'channel'), "Der Raum ist jetzt geschlossen.")
+                self.ratelimitedSend(self.config.get('irc', 'channel'), "Der Raum ist jetzt geschlossen.")
          else:
             if not msg.retain:
-              self.connection.privmsg(self.config.get('irc', 'channel'), "Der Raum ist gerade verschwunden.")
+              self.ratelimitedSend(self.config.get('irc', 'channel'), "Der Raum ist gerade verschwunden.")
             logging.info("invalid message received. setting state to None")
             logging.info("message: %s"%msg.payload)
             self.state = None
@@ -166,7 +166,7 @@ class Bot(ircbot.SingleServerIRCBot):
           if editInfo["isMinor"]:
              logging.info("ignore minor edit")
           else:
-             self.connection.privmsg(self.config.get('irc', 'channel'), (u"wiki: '%s' on https://wiki.maschinendeck.org/wiki/%s by %s (diff https://wiki.maschinendeck.org/w/index.php?diff=%s )" % (
+             self.ratelimitedSend(self.config.get('irc', 'channel'), (u"wiki: '%s' on https://wiki.maschinendeck.org/wiki/%s by %s (diff https://wiki.maschinendeck.org/w/index.php?diff=%s )" % (
                 editInfo["summary"],
                 editInfo["article"]["mTitle"]["mUrlform"],
                 editInfo["user"]["mName"],
