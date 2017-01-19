@@ -77,53 +77,57 @@ class Bot(ircbot.SingleServerIRCBot):
             # Start periodically checking the open/closed state.
             self.check_state_init()
 
+   def ratelimitedSend(self, message):
+      logging.debug("trying to send message %s"%message)
+      now = time.time()
+      self.cooldown_count -= 1
+      if now > self.cooldown_timestamp + 60*5:
+         self.cooldown_timestamp = now
+         self.cooldown_count = 5
+
+      if self.cooldown_count == 0:
+         self.connection.privmsg(self.config.get('irc', 'channel'), "zu viel Spam hier, ich bin mal fuer 5 Minuten ruhig.")
+         logging.debug("engaging cooldown")
+      
+      if self.cooldown_count < 1:
+         return
+
+      self.connection.privmsg(self.config.get('irc', 'channel'), message)
+
+
    def on_pubmsg(self, connection, event):
       message = event.arguments()[0].strip()
       logging.debug("got message %s"%(message))
       parts = message.split(" ")
-      if "!raum" in parts or "!clients" in parts or "!help" in parts or "!ofen" in parts or "!raumstatus" in parts or "!room" in parts or "!pizza" in parts or "!pizzaofen" in parts or "!lasagne" in parts:
-         now = time.time()
-         self.cooldown_count -= 1
-         if now > self.cooldown_timestamp + 60*5:
-            self.cooldown_timestamp = now
-            self.cooldown_count = 5
+      if "!raum" in parts or "!raumstatus" in parts or "!room" in parts:
+         state = "(that should never happen)"
+         if self.state == True:
+            state = "offen"
+         elif self.state == False:
+            state = "geschlossen"
+         elif self.state == None:
+            state = "habe seit botstart keinen MQTT-Raumstatus erhalten"
+   
+         if random.randrange(1,100) > 95:
+            state = "%s und sauber" % state
+   
+         self.ratelimitedSend("raumstatus: %s"%state)
+   
+      if "!clients" in parts:
+         if self.clients_total == -1 and self.clients_wifi == -1:
+             self.ratelimitedSend("clientzahl ist aktuell nicht verfuegbar")
+         elif self.clients_total == -1:
+             self.ratelimitedSend("aktuell sind %s wlan-clients verbunden"%self.clients_wifi)
+         elif self.clients_wifi == -1:
+             self.ratelimitedSend("aktuell sind %s clients verbunden"%self.clients_total)
+         else:
+             self.ratelimitedSend("aktuell sind %s wlan-clients und %s lan-clients verbunden"%(self.clients_wifi, self.clients_total - self.clients_wifi))
 
-         if self.cooldown_count == 0:
-            self.connection.privmsg(self.config.get('irc', 'channel'), "zu viel Spam hier, ich bin mal fuer 5 Minuten ruhig.")
-            logging.debug("engaging cooldown")
-         
-         if self.cooldown_count < 1:
-            return
-
-         if "!raum" in parts or "!raumstatus" in parts or "!room" in parts:
-            state = "(that should never happen)"
-            if self.state == True:
-               state = "offen"
-            elif self.state == False:
-               state = "geschlossen"
-            elif self.state == None:
-               state = "habe seit botstart keinen MQTT-Raumstatus erhalten"
+      if "!ofen" in parts or "!pizza" in parts or "!pizzaofen" in parts or "!lasagne" in parts:
+         self.ratelimitedSend("Weiß ich nicht. Bitte schreibe mir eine Bilderkennung, die http://pizzastatus.rageofzen.com/ passend auswertet.")
    
-            if random.randrange(1,100) > 95:
-               state = "%s und sauber" % state
-   
-            self.connection.privmsg(self.config.get('irc', 'channel'), "raumstatus: %s"%state)
-   
-         elif "!clients" in parts:
-            if self.clients_total == -1 and self.clients_wifi == -1:
-                self.connection.privmsg(self.config.get('irc', 'channel'), "clientzahl ist aktuell nicht verfuegbar")
-            elif self.clients_total == -1:
-                self.connection.privmsg(self.config.get('irc', 'channel'), "aktuell sind %s wlan-clients verbunden"%self.clients_wifi)
-            elif self.clients_wifi == -1:
-                self.connection.privmsg(self.config.get('irc', 'channel'), "aktuell sind %s clients verbunden"%self.clients_total)
-            else:
-                self.connection.privmsg(self.config.get('irc', 'channel'), "aktuell sind %s wlan-clients und %s lan-clients verbunden"%(self.clients_wifi, self.clients_total - self.clients_wifi))
-
-         elif "!ofen" in parts or "!pizza" in parts or "!pizzaofen" in parts or "!lasagne" in parts:
-	    self.connection.privmsg(self.config.get('irc', 'channel'), "Weiß ich nicht. Bitte schreibe mir eine Bilderkennung, die http://pizzastatus.rageofzen.com/ passend auswertet.")
-   
-         elif "!help" in parts:
-            self.connection.privmsg(self.config.get('irc', 'channel'), "Kommandos: !help, !clients, !raum und semifunktional !ofen")
+      if "!help" in parts:
+         self.ratelimitedSend("Kommandos: !help, !clients, !raum und semifunktional !ofen")
 
 
    def on_message(self, client, userdata, msg):
