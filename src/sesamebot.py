@@ -125,9 +125,12 @@ class Bot(ircbot.SingleServerIRCBot):
 
       if "!ofen" in parts or "!pizza" in parts or "!pizzaofen" in parts or "!lasagne" in parts:
          self.ratelimitedSend("Weiß ich nicht. Bitte schreibe mir eine Bilderkennung, die http://pizzastatus.rageofzen.com/ passend auswertet.")
+
+      if "!shrug" in parts:
+         self.ratelimitedSend("¯\_(ツ)_/¯")
    
       if "!help" in parts:
-         self.ratelimitedSend("Kommandos: !help, !clients, !raum und semifunktional !ofen")
+         self.ratelimitedSend("Kommandos: !help, !clients, !raum, !shrug und semifunktional !ofen")
 
 
    def on_message(self, client, userdata, msg):
