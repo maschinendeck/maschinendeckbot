@@ -128,6 +128,9 @@ class Bot(ircbot.SingleServerIRCBot):
 
       if "!shrug" in parts:
          self.ratelimitedSend("¯\_(ツ)_/¯")
+
+      if "!picard" in parts:
+         self.ratelimitedSend("m)")
    
       if "!help" in parts:
          self.ratelimitedSend("Kommandos: !help, !clients, !raum, !shrug und semifunktional !ofen")
