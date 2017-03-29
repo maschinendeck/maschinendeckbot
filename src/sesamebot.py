@@ -98,7 +98,7 @@ class Bot(ircbot.SingleServerIRCBot):
    def on_pubmsg(self, connection, event):
       message = event.arguments()[0].strip()
       logging.debug("got message %s"%(message))
-      parts = message.split(" ")
+      parts = message.lower().split(" ")
       if "!raum" in parts or "!raumstatus" in parts or "!room" in parts:
          state = "(that should never happen)"
          if self.state == True:
