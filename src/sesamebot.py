@@ -99,7 +99,7 @@ class Bot(ircbot.SingleServerIRCBot):
       message = event.arguments()[0].strip()
       logging.debug("got message %s"%(message))
       parts = message.lower().split(" ")
-      if "!raum" in parts or "!raumstatus" in parts or "!room" in parts:
+      if "!raum" in parts or "!raumstatus" in parts or "!room" in parts or "!status" in parts:
          state = "(that should never happen)"
          if self.state == True:
             state = "offen"
