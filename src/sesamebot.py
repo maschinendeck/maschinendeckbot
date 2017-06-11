@@ -132,7 +132,7 @@ class Bot(ircbot.SingleServerIRCBot):
       if "!picard" in parts:
          self.ratelimitedSend("m)")
    
-      if "!help" in parts:
+      if "!help" in parts or "!hilfe" in parts or "!befehle" in parts:
          self.ratelimitedSend("Kommandos: !help, !clients, !raum, !shrug und semifunktional !ofen")
 
 
