@@ -32,6 +32,7 @@ import time
 class Bot(ircbot.SingleServerIRCBot):
    # The last open/closed/etc state we knew.
    state = None
+   client = None
 
    # Timestamp for the last successful check.
    last_successful_check = None
@@ -41,6 +42,8 @@ class Bot(ircbot.SingleServerIRCBot):
 
    cooldown_timestamp = 0
    cooldown_count = 0
+
+   lamp_status = -1
 
    def __init__(self, args, config):
       ircbot.SingleServerIRCBot.__init__(self, [(config.get('irc', 'server'), config.getint('irc', 'port'))], config.get('irc', 'nickname'), config.get('irc', 'name'))
@@ -133,7 +136,25 @@ class Bot(ircbot.SingleServerIRCBot):
          self.ratelimitedSend("m)")
    
       if "!help" in parts or "!hilfe" in parts or "!befehle" in parts:
-         self.ratelimitedSend("Kommandos: !help, !clients, !raum, !shrug und semifunktional !ofen")
+         self.ratelimitedSend("Kommandos: !help, !clients, !raum, !shrug, !lampe und semifunktional !ofen")
+
+      if "!lampe" in parts or "!lamp" in parts or "!licht" in parts:
+        if "an" in parts or "on" in parts:
+          if self.state == True:
+            self.ratelimitedSend("Es werde Licht!")
+            self.client.publish("/maschinendeck/esper/1bfe7f/socket/set", "1")
+          else:
+            self.ratelimitedSend("I'm sorry Dave, i I'm afraid I can't do that while I believe the room to be closed")
+        elif "aus" in parts or "off" in parts:
+          self.ratelimitedSend("Licht verlösche!")
+          self.client.publish("/maschinendeck/esper/1bfe7f/socket/set", "0")
+        else:
+          if(self.lamp_status == 1):
+            self.ratelimitedSend("Die Lampe ist an")
+          elif(self.lamp_status == 0):
+            self.ratelimitedSend("Die Lampe ist aus")
+          else:
+           self.ratelimitedSend("Lampe? Ich weiß nichts über die Lampe.")
 
 
    def on_message(self, client, userdata, msg):
@@ -198,12 +219,22 @@ class Bot(ircbot.SingleServerIRCBot):
             self.clients_wifi = clientCount['wireless']
          else:
             self.clients_wifi = -1
+
+      elif msg.topic == "/maschinendeck/esper/1bfe7f/socket/state":
+        logging.debug("got cyberlampe "+msg.payload)
+        if(msg.payload == "1"):
+          self.lamp_status = 1
+        elif (msg.payload == "0"):
+          self.lamp_status = 0
+        else:
+          self.lamp_status = -1
         
  
 
    def check_state_init(self):
       logging.info("Connecting to MQTT")
       client = mqtt.Client()
+      self.client = client
       client.on_connect = self.on_connect
       client.on_message = self.on_message
       client.connect_async(config.get('mqtt', 'host'), config.getint('mqtt', 'port'), config.getint('mqtt', 'keepalive'))
@@ -215,6 +246,7 @@ class Bot(ircbot.SingleServerIRCBot):
       client.subscribe("/maschinendeck/raum/status")
       client.subscribe("/maschinendeck/wiki/edit")
       client.subscribe("/maschinendeck/raum/clients")
+      client.subscribe("/maschinendeck/esper/1bfe7f/socket/state")
 
    def check_state(self):
       """Request the current open/closed state from the status URL in the config."""
