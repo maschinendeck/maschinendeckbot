@@ -116,7 +116,7 @@ class Bot(ircbot.SingleServerIRCBot):
    
          self.ratelimitedSend("raumstatus: %s"%state)
    
-      if "!clients" in parts:
+      if "!clients" in parts or "!anzahl" in parts:
          if self.clients_total == -1 and self.clients_wifi == -1:
              self.ratelimitedSend("clientzahl ist aktuell nicht verfuegbar")
          elif self.clients_total == -1:
