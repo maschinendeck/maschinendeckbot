@@ -150,7 +150,7 @@ class Bot(ircbot.SingleServerIRCBot):
             self.ratelimitedSend("Es werde Licht!")
             self.client.publish("/maschinendeck/esper/1bfe7f/socket/set", "1")
           else:
-            self.ratelimitedSend("I'm sorry Dave, i I'm afraid I can't do that while I believe the room to be closed")
+            self.ratelimitedSend("I'm sorry Dave, I'm afraid I can't do that while I believe the room to be closed")
         elif "aus" in parts or "off" in parts:
           self.ratelimitedSend("Licht verlösche!")
           self.client.publish("/maschinendeck/esper/1bfe7f/socket/set", "0")
