@@ -101,6 +101,12 @@ class Bot(ircbot.SingleServerIRCBot):
    def on_pubmsg(self, connection, event):
       message = event.arguments()[0].strip()
       logging.debug("got message %s"%(message))
+
+      sender = event.source()
+      if "Not-75c6" in sender and "notifico" in sender:
+          logging.debug("ignoring message because sender %s is identified as notificio"%(sender))
+          return
+
       parts = message.lower().split(" ")
       if "!raum" in parts or "!raumstatus" in parts or "!room" in parts or "!status" in parts:
          state = "(that should never happen)"
