@@ -76,31 +76,34 @@ class Bot(ircbot.SingleServerIRCBot):
             if self.config.getboolean('irc', 'join_channel'):
                logging.info("Joining %s" % self.config.get('irc', 'channel'))
                connection.join(self.config.get('irc', 'channel'))
+               connection.join("#maschinendeck-bot")
 
             # Start periodically checking the open/closed state.
             self.check_state_init()
 
-   def ratelimitedSend(self, message):
-      logging.debug("trying to send message %s"%message)
-      now = time.time()
-      self.cooldown_count -= 1
-      if now > self.cooldown_timestamp + 60*5:
-         self.cooldown_timestamp = now
-         self.cooldown_count = 5
+   def ratelimitedSend(self, message, channel):
+      logging.debug("trying to send message %s %s"%(channel, message))
+      if channel == "#maschinendeck":
+        now = time.time()
+        self.cooldown_count -= 1
+        if now > self.cooldown_timestamp + 60*5:
+           self.cooldown_timestamp = now
+           self.cooldown_count = 3
 
-      if self.cooldown_count == 0:
-         self.connection.privmsg(self.config.get('irc', 'channel'), "zu viel Spam hier, ich bin mal fuer 5 Minuten ruhig.")
-         logging.debug("engaging cooldown")
+        if self.cooldown_count == 0:
+           self.connection.privmsg(self.config.get('irc', 'channel'), "zu viel Spam hier, ich bin mal fuer 5 Minuten ruhig. Frag' doch in #maschinendeck-bot, da gibt es keinen Cooldown.")
+           logging.debug("engaging cooldown")
       
-      if self.cooldown_count < 1:
-         return
+        if self.cooldown_count < 1:
+           return
 
-      self.connection.privmsg(self.config.get('irc', 'channel'), message)
+      self.connection.privmsg(channel, message)
 
 
    def on_pubmsg(self, connection, event):
       message = event.arguments()[0].strip()
-      logging.debug("got message %s"%(message))
+      channel = event.target().strip()
+      logging.debug("got message %s %s"%(channel, message))
 
       sender = event.source()
       if "Not-75c6" in sender and "notifico" in sender:
@@ -120,47 +123,47 @@ class Bot(ircbot.SingleServerIRCBot):
          if random.randrange(1,100) > 95:
             state = "%s und sauber" % state
    
-         self.ratelimitedSend("raumstatus: %s"%state)
+         self.ratelimitedSend("raumstatus: %s"%state, channel)
    
       if "!clients" in parts or "!anzahl" in parts:
          if self.clients_total == -1 and self.clients_wifi == -1:
-             self.ratelimitedSend("clientzahl ist aktuell nicht verfuegbar")
+             self.ratelimitedSend("clientzahl ist aktuell nicht verfuegbar", channel)
          elif self.clients_total == -1:
-             self.ratelimitedSend("aktuell sind %s wlan-clients verbunden"%self.clients_wifi)
+             self.ratelimitedSend("aktuell sind %s wlan-clients verbunden"%self.clients_wifi, channel)
          elif self.clients_wifi == -1:
-             self.ratelimitedSend("aktuell sind %s clients verbunden"%self.clients_total)
+             self.ratelimitedSend("aktuell sind %s clients verbunden"%self.clients_total, channel)
          else:
-             self.ratelimitedSend("aktuell sind %s wlan-clients und %s lan-clients verbunden"%(self.clients_wifi, self.clients_total - self.clients_wifi))
+             self.ratelimitedSend("aktuell sind %s wlan-clients und %s lan-clients verbunden"%(self.clients_wifi, self.clients_total - self.clients_wifi), channel)
 
       if "!ofen" in parts or "!pizza" in parts or "!pizzaofen" in parts or "!lasagne" in parts:
-         self.ratelimitedSend("Weiß ich nicht. Bitte schreibe mir eine Bilderkennung, die http://pizzastatus.rageofzen.com/ passend auswertet.")
+         self.ratelimitedSend("Weiß ich nicht. Bitte schreibe mir eine Bilderkennung, die http://pizzastatus.rageofzen.com/ passend auswertet.", channel)
 
       if "!shrug" in parts:
-         self.ratelimitedSend("¯\_(ツ)_/¯")
+         self.ratelimitedSend("¯\_(ツ)_/¯", channel)
 
       if "!picard" in parts:
-         self.ratelimitedSend("m)")
+         self.ratelimitedSend("m)", channel)
    
       if "!help" in parts or "!hilfe" in parts or "!befehle" in parts:
-         self.ratelimitedSend("Kommandos: !help, !clients, !raum, !shrug, !lampe und semifunktional !ofen")
+         self.ratelimitedSend("Kommandos: !help, !clients, !raum, !shrug, !lampe und semifunktional !ofen", channel)
 
       if "!lampe" in parts or "!lamp" in parts or "!licht" in parts:
         if "an" in parts or "on" in parts:
           if self.state == True:
-            self.ratelimitedSend("Es werde Licht!")
+            self.ratelimitedSend("Es werde Licht!", channel)
             self.client.publish("/maschinendeck/esper/1bfe7f/socket/set", "1")
           else:
-            self.ratelimitedSend("I'm sorry Dave, I'm afraid I can't do that while I believe the room to be closed")
+            self.ratelimitedSend("I'm sorry Dave, I'm afraid I can't do that while I believe the room to be closed", channel)
         elif "aus" in parts or "off" in parts:
-          self.ratelimitedSend("Licht verlösche!")
+          self.ratelimitedSend("Licht verlösche!", channel)
           self.client.publish("/maschinendeck/esper/1bfe7f/socket/set", "0")
         else:
           if(self.lamp_status == 1):
-            self.ratelimitedSend("Die Lampe ist an")
+            self.ratelimitedSend("Die Lampe ist an", channel)
           elif(self.lamp_status == 0):
-            self.ratelimitedSend("Die Lampe ist aus")
+            self.ratelimitedSend("Die Lampe ist aus", channel)
           else:
-           self.ratelimitedSend("Lampe? Ich weiß nichts über die Lampe.")
+           self.ratelimitedSend("Lampe? Ich weiß nichts über die Lampe.", channel)
 
 
    def on_message(self, client, userdata, msg):
@@ -170,19 +173,19 @@ class Bot(ircbot.SingleServerIRCBot):
             self.state = True
             if not msg.retain:
               if random.randrange(1,100) > 95:
-                self.ratelimitedSend("Der Raum ist jetzt offen und dreckig.")
+                self.ratelimitedSend("Der Raum ist jetzt offen und dreckig.", self.config.get('irc', 'channel'))
               else:
-                self.ratelimitedSend("Der Raum ist jetzt offen.")
+                self.ratelimitedSend("Der Raum ist jetzt offen.", self.config.get('irc', 'channel'))
          elif msg.payload == "closed":
             self.state = False
             if not msg.retain:
               if random.randrange(1,100) > 95:
-                self.ratelimitedSend("Der Raum ist jetzt geschlossen und dreckig.")
+                self.ratelimitedSend("Der Raum ist jetzt geschlossen und dreckig.", self.config.get('irc', 'channel'))
               else:
-                self.ratelimitedSend("Der Raum ist jetzt geschlossen.")
+                self.ratelimitedSend("Der Raum ist jetzt geschlossen.", self.config.get('irc', 'channel'))
          else:
             if not msg.retain:
-              self.ratelimitedSend("Der Raum ist gerade verschwunden.")
+              self.ratelimitedSend("Der Raum ist gerade verschwunden.", self.config.get('irc', 'channel'))
             logging.info("invalid message received. setting state to None")
             logging.info("message: %s"%msg.payload)
             self.state = None
@@ -204,7 +207,7 @@ class Bot(ircbot.SingleServerIRCBot):
                 editInfo["article"]["mTitle"]["mUrlform"],
                 editInfo["user"]["mName"],
 		editInfo["article"]["mLatest"]
-             )).encode(encoding='utf8'))
+             )).encode(encoding='utf8'), self.config.get('irc', 'channel'))
 
       elif msg.topic == "/maschinendeck/raum/clients":
          logging.debug("got clientcount")
@@ -228,12 +231,17 @@ class Bot(ircbot.SingleServerIRCBot):
 
       elif msg.topic == "/maschinendeck/esper/1bfe7f/socket/state":
         logging.debug("got cyberlampe "+msg.payload)
+        status = "what?"
         if(msg.payload == "1"):
           self.lamp_status = 1
+          status = "an"
         elif (msg.payload == "0"):
           self.lamp_status = 0
+          status = "aus"
         else:
           self.lamp_status = -1
+
+        self.ratelimitedSend("Die Lampe ist jetzt %s"%status, "#maschinendeck-bot")
         
  
 
