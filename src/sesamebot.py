@@ -163,9 +163,12 @@ class Bot(ircbot.SingleServerIRCBot):
           self.client.publish("/maschinendeck/esper/1bfe7f/socket/set", "0")
         else:
           if(self.lamp_status == 1):
-            self.ratelimitedSend("Die Lampe ist an", channel)
+            self.ratelimitedSend("Die Lampe ist an. Du kannst sie mit !licht aus auschalten.", channel)
           elif(self.lamp_status == 0):
-            self.ratelimitedSend("Die Lampe ist aus", channel)
+            if self.state == True:
+              self.ratelimitedSend("Die Lampe ist aus. Du kannst sie mit !licht an einschalten.", channel)
+            else:
+              self.ratelimitedSend("Die Lampe ist aus", channel)
           else:
            self.ratelimitedSend("Lampe? Ich weiß nichts über die Lampe.", channel)
 
