@@ -82,6 +82,10 @@ class Bot(ircbot.SingleServerIRCBot):
             self.check_state_init()
 
    def ratelimitedSend(self, message, channel):
+      if channel == "alle":
+        self.ratelimitedSend(message, self.config.get('irc', 'channel'))
+        self.ratelimitedSend(message, "#maschinendeck-bot")
+
       logging.debug("trying to send message %s %s"%(channel, message))
       if channel == "#maschinendeck":
         now = time.time()
@@ -173,19 +177,19 @@ class Bot(ircbot.SingleServerIRCBot):
             self.state = True
             if not msg.retain:
               if random.randrange(1,100) > 95:
-                self.ratelimitedSend("Der Raum ist jetzt offen und dreckig.", self.config.get('irc', 'channel'))
+                self.ratelimitedSend("Der Raum ist jetzt offen und dreckig.", "alle")
               else:
-                self.ratelimitedSend("Der Raum ist jetzt offen.", self.config.get('irc', 'channel'))
+                self.ratelimitedSend("Der Raum ist jetzt offen.", "alle")
          elif msg.payload == "closed":
             self.state = False
             if not msg.retain:
               if random.randrange(1,100) > 95:
-                self.ratelimitedSend("Der Raum ist jetzt geschlossen und dreckig.", self.config.get('irc', 'channel'))
+                self.ratelimitedSend("Der Raum ist jetzt geschlossen und dreckig.", "alle")
               else:
-                self.ratelimitedSend("Der Raum ist jetzt geschlossen.", self.config.get('irc', 'channel'))
+                self.ratelimitedSend("Der Raum ist jetzt geschlossen.", "alle")
          else:
             if not msg.retain:
-              self.ratelimitedSend("Der Raum ist gerade verschwunden.", self.config.get('irc', 'channel'))
+              self.ratelimitedSend("Der Raum ist gerade verschwunden.", "alle")
             logging.info("invalid message received. setting state to None")
             logging.info("message: %s"%msg.payload)
             self.state = None
@@ -199,15 +203,17 @@ class Bot(ircbot.SingleServerIRCBot):
              logging.error("error decoding /maschinendeck/wiki/edit-JSON")
              return
 
+          channel = "alle"
           if editInfo["isMinor"]:
              logging.info("ignore minor edit")
-          else:
-             self.ratelimitedSend((u"wiki: '%s' on https://wiki.maschinendeck.org/wiki/%s by %s (diff https://wiki.maschinendeck.org/w/index.php?diff=%s )" % (
-                editInfo["summary"],
-                editInfo["article"]["mTitle"]["mUrlform"],
-                editInfo["user"]["mName"],
-		editInfo["article"]["mLatest"]
-             )).encode(encoding='utf8'), self.config.get('irc', 'channel'))
+             channel = "#maschinendeck-bot"
+
+          self.ratelimitedSend((u"wiki: '%s' on https://wiki.maschinendeck.org/wiki/%s by %s (diff https://wiki.maschinendeck.org/w/index.php?diff=%s )" % (
+             editInfo["summary"],
+             editInfo["article"]["mTitle"]["mUrlform"],
+             editInfo["user"]["mName"],
+             editInfo["article"]["mLatest"]
+          )).encode(encoding='utf8'), channel)
 
       elif msg.topic == "/maschinendeck/raum/clients":
          logging.debug("got clientcount")
