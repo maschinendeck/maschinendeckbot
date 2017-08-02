@@ -149,28 +149,10 @@ class Bot(ircbot.SingleServerIRCBot):
          self.ratelimitedSend("m)", channel)
    
       if "!help" in parts or "!hilfe" in parts or "!befehle" in parts:
-         self.ratelimitedSend("Kommandos: !help, !clients, !raum, !shrug, !lampe und semifunktional !ofen", channel)
+         self.ratelimitedSend("Kommandos: !help, !clients, !raum, !shrug und semifunktional !ofen", channel)
 
       if "!lampe" in parts or "!lamp" in parts or "!licht" in parts:
-        if "an" in parts or "on" in parts:
-          if self.state == True:
-            self.ratelimitedSend("Es werde Licht!", channel)
-            self.client.publish("/maschinendeck/esper/1bfe7f/socket/set", "1")
-          else:
-            self.ratelimitedSend("I'm sorry Dave, I'm afraid I can't do that while I believe the room to be closed", channel)
-        elif "aus" in parts or "off" in parts:
-          self.ratelimitedSend("Licht verlösche!", channel)
-          self.client.publish("/maschinendeck/esper/1bfe7f/socket/set", "0")
-        else:
-          if(self.lamp_status == 1):
-            self.ratelimitedSend("Die Lampe ist an. Du kannst sie mit !licht aus auschalten.", channel)
-          elif(self.lamp_status == 0):
-            if self.state == True:
-              self.ratelimitedSend("Die Lampe ist aus. Du kannst sie mit !licht an einschalten.", channel)
-            else:
-              self.ratelimitedSend("Die Lampe ist aus", channel)
-          else:
-           self.ratelimitedSend("Lampe? Ich weiß nichts über die Lampe.", channel)
+        self.ratelimitedSend("This feature is deprecated because it turned out to be used too spammy", channel)
 
 
    def on_message(self, client, userdata, msg):
