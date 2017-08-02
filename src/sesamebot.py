@@ -90,12 +90,12 @@ class Bot(ircbot.SingleServerIRCBot):
       if channel == "#maschinendeck":
         now = time.time()
         self.cooldown_count -= 1
-        if now > self.cooldown_timestamp + 60*5:
+        if now > self.cooldown_timestamp + 60*10:
            self.cooldown_timestamp = now
            self.cooldown_count = 3
 
         if self.cooldown_count == 0:
-           self.connection.privmsg(self.config.get('irc', 'channel'), "zu viel Spam hier, ich bin mal fuer 5 Minuten ruhig. Frag' doch in #maschinendeck-bot, da gibt es keinen Cooldown.")
+           self.connection.privmsg(self.config.get('irc', 'channel'), "zu viel Spam hier, ich bin mal fuer 10 Minuten ruhig. Frag' doch in #maschinendeck-bot, da gibt es keinen Cooldown.")
            logging.debug("engaging cooldown")
       
         if self.cooldown_count < 1:
