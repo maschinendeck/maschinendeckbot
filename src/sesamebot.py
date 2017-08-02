@@ -110,7 +110,7 @@ class Bot(ircbot.SingleServerIRCBot):
       logging.debug("got message %s %s"%(channel, message))
 
       sender = event.source()
-      if "Not-75c6" in sender and "notifico" in sender:
+      if "Not" in sender and "notifico" in sender:
           logging.debug("ignoring message because sender %s is identified as notificio"%(sender))
           return
 
